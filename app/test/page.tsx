@@ -1,4 +1,5 @@
-export default function TestPage() {
+// app/page.tsx
+export default function Home() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-purple-100 p-8">
       <h1 className="text-4xl font-bold text-blue-600 mb-4">
