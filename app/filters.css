@@ -1,0 +1,23 @@
+/* Estilos específicos para filtros */
+.filter-transition {
+  transition: all 0.3s ease-in-out;
+}
+
+/* Scrollbar personalizado para filtros */
+.filter-scrollbar::-webkit-scrollbar {
+  width: 6px;
+}
+
+.filter-scrollbar::-webkit-scrollbar-track {
+  background: #f1f1f1;
+  border-radius: 3px;
+}
+
+.filter-scrollbar::-webkit-scrollbar-thumb {
+  background: #888;
+  border-radius: 3px;
+}
+
+.filter-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: #555;
+}
