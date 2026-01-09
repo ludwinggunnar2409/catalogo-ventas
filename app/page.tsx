@@ -1,3 +1,5 @@
+export const dynamic = 'force-dynamic'
+
 import { 
   getEmpresasActivas, 
   getCategoriasActivas, 
@@ -155,3 +157,4 @@ export default async function Home({ searchParams }: PageProps) {
     </div>
   );
 }
+// LuiPV2409.*
