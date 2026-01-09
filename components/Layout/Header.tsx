@@ -11,7 +11,7 @@ export default function Header() {
             <div className="h-9 w-9 rounded-lg bg-blue-600 text-white flex items-center justify-center font-bold">
               MC
             </div>
-            <span className="font-bold text-gray-900">MarketCat</span>
+            <span className="font-bold text-gray-900">MarketLui</span>
           </div>
 
           <CartButton />
