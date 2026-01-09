@@ -151,7 +151,7 @@ export default function WhatsAppCheckout({ onClose }: WhatsAppCheckoutProps) {
         </h4>
         <ul className="text-sm text-blue-800 space-y-1">
           <li>• Se enviará un mensaje estructurado por WhatsApp</li>
-          <li>• Cada empresa recibirá su pedido por separado</li>
+          <li>• La empresa recibirá su pedido</li>
           <li>• Coordinarás envío y pago directamente con el vendedor</li>
           <li>• El carrito se vaciará automáticamente</li>
         </ul>
