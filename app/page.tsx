@@ -85,6 +85,7 @@ export default async function Home({ searchParams }: PageProps) {
             <SidebarFilters 
               empresas={empresasConCount}
               categorias={categoriasConCount}
+              productos={productos}
               productosCount={totalProductos}
             />
           </div>

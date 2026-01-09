@@ -3,11 +3,12 @@
 
 import { Suspense, useEffect, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
-import type { Empresa, Categoria } from '@/types/database';
+import type { Empresa, Categoria, Producto } from '@/types/database';
 
 interface SidebarFiltersProps {
   empresas: Empresa[];
   categorias: Categoria[];
+  productos: Producto[]; // ← AHORA RECIBE PRODUCTOS
   productosCount: number;
 }
 
@@ -19,7 +20,7 @@ export default function SidebarFilters(props: SidebarFiltersProps) {
   );
 }
 
-function SidebarFiltersContent({ empresas, categorias, productosCount }: SidebarFiltersProps) {
+function SidebarFiltersContent({ empresas, categorias, productos, productosCount }: SidebarFiltersProps) {
   const router = useRouter();
   const searchParams = useSearchParams();
 
@@ -50,19 +51,12 @@ function SidebarFiltersContent({ empresas, categorias, productosCount }: Sidebar
     setIsMobileOpen(false);
   };
 
-  // ✅ CONTADORES REALES
-  const getEmpresaCount = (empresaId: string) => {
-    if (!empresaId) return productosCount;
-    // Aquí iría tu llamada real; mientras tanto usamos estimación
-    // Suponemos que los productos se reparten equitativamente
-    return Math.floor(productosCount / empresas.length);
-  };
+  // ✅ CONTADORES REALES (sobre los productos que ya tienes)
+  const getEmpresaCount = (empresaId: string) =>
+    productos.filter(p => p.empresa_id === empresaId).length;
 
-  const getCategoriaCount = (categoriaId: string) => {
-    if (!categoriaId) return productosCount;
-    // Igual que arriba: estimación simple
-    return Math.floor(productosCount / categorias.length);
-  };
+  const getCategoriaCount = (categoriaId: string) =>
+    productos.filter(p => p.categoria_id === categoriaId).length;
 
   return (
     <>
