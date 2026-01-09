@@ -1,15 +1,16 @@
 // app/components/SidebarFilters.tsx
 'use client';
 
-import { Suspense, useEffect, useState } from 'react';
+import { Suspense, useEffect, useState, useCallback } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import type { Empresa, Categoria, Producto } from '@/types/database';
 
 interface SidebarFiltersProps {
   empresas: Empresa[];
   categorias: Categoria[];
-  productos: Producto[]; // ← AHORA RECIBE PRODUCTOS
+  productos: Producto[];
   productosCount: number;
+  onFiltersChange?: (empresa: string, categoria: string) => void;
 }
 
 export default function SidebarFilters(props: SidebarFiltersProps) {
@@ -20,60 +21,119 @@ export default function SidebarFilters(props: SidebarFiltersProps) {
   );
 }
 
-function SidebarFiltersContent({ empresas, categorias, productos, productosCount }: SidebarFiltersProps) {
+function SidebarFiltersContent({
+  empresas,
+  categorias,
+  productos,
+  productosCount,
+  onFiltersChange,
+}: SidebarFiltersProps) {
   const router = useRouter();
   const searchParams = useSearchParams();
 
   const [empresaId, setEmpresaId] = useState<string>('');
   const [categoriaId, setCategoriaId] = useState<string>('');
   const [isMobileOpen, setIsMobileOpen] = useState(false);
+  const [hasChanged, setHasChanged] = useState(false);
 
-  // Sincronizar con URL
+  // Sincronizar con URL al cargar
   useEffect(() => {
-    setEmpresaId(searchParams.get('empresa') || '');
-    setCategoriaId(searchParams.get('categoria') || '');
+    const empresa = searchParams.get('empresa') || '';
+    const categoria = searchParams.get('categoria') || '';
+    setEmpresaId(empresa);
+    setCategoriaId(categoria);
+    setHasChanged(false);
   }, [searchParams]);
 
   // Aplicar filtros
-  const applyFilters = () => {
+  const applyFilters = useCallback(() => {
     const params = new URLSearchParams();
     if (empresaId) params.set('empresa', empresaId);
     if (categoriaId) params.set('categoria', categoriaId);
-    router.push(`/?${params.toString()}`);
+
+    const newUrl = params.toString() ? `/?${params.toString()}` : '/';
+    router.push(newUrl);
+
+    if (onFiltersChange) {
+      onFiltersChange(empresaId, categoriaId);
+    }
+
+    setHasChanged(false);
     setIsMobileOpen(false);
-  };
+  }, [empresaId, categoriaId, router, onFiltersChange]);
 
   // Limpiar filtros
-  const clearFilters = () => {
+  const clearFilters = useCallback(() => {
     setEmpresaId('');
     setCategoriaId('');
     router.push('/');
+
+    if (onFiltersChange) {
+      onFiltersChange('', '');
+    }
+
+    setHasChanged(false);
     setIsMobileOpen(false);
+  }, [router, onFiltersChange]);
+
+  // Detectar cambios
+  const handleEmpresaChange = (newValue: string) => {
+    setEmpresaId(newValue);
+    setHasChanged(true);
   };
 
-  // ✅ CONTADORES REALES (sobre los productos que ya tienes)
-  const getEmpresaCount = (empresaId: string) =>
-    productos.filter(p => p.empresa_id === empresaId).length;
+  const handleCategoriaChange = (newValue: string) => {
+    setCategoriaId(newValue);
+    setHasChanged(true);
+  };
 
-  const getCategoriaCount = (categoriaId: string) =>
-    productos.filter(p => p.categoria_id === categoriaId).length;
+  // Contadores reales basados en productos
+  const getEmpresaCount = (idEmpresa: string) =>
+    productos.filter((p) => p.empresa_id === idEmpresa).length;
+
+  const getCategoriaCount = (idCategoria: string) =>
+    productos.filter((p) => p.categoria_id === idCategoria).length;
+
+  // Contar productos con filtros actuales aplicados
+  const getFilteredCount = () => {
+    return productos.filter((p) => {
+      const matchEmpresa = !empresaId || p.empresa_id === empresaId;
+      const matchCategoria = !categoriaId || p.categoria_id === categoriaId;
+      return matchEmpresa && matchCategoria;
+    }).length;
+  };
+
+  const filteredCount = getFilteredCount();
 
   return (
     <>
       {/* Botón para móvil */}
       <button
         onClick={() => setIsMobileOpen(true)}
-        className="md:hidden fixed bottom-6 right-6 z-40 flex items-center gap-2 rounded-full bg-gray-900 px-4 py-3 text-white shadow-lg hover:bg-gray-800"
+        className="md:hidden fixed bottom-6 right-6 z-40 flex items-center gap-2 rounded-full bg-gray-900 px-4 py-3 text-white shadow-lg hover:bg-gray-800 transition-colors"
       >
-        <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z" />
+        <svg
+          className="h-5 w-5"
+          fill="none"
+          viewBox="0 0 24 24"
+          stroke="currentColor"
+        >
+          <path
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            strokeWidth={2}
+            d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z"
+          />
         </svg>
         Filtros
       </button>
 
       {/* Overlay móvil */}
       {isMobileOpen && (
-        <div className="fixed inset-0 z-50 bg-black/50 md:hidden" onClick={() => setIsMobileOpen(false)} />
+        <div
+          className="fixed inset-0 z-50 bg-black/50 md:hidden"
+          onClick={() => setIsMobileOpen(false)}
+        />
       )}
 
       {/* Sidebar */}
@@ -90,16 +150,31 @@ function SidebarFiltersContent({ empresas, categorias, productos, productosCount
         <div className="p-6">
           <div className="flex items-center justify-between mb-6">
             <h2 className="text-lg font-semibold text-gray-900">Filtros</h2>
-            <button onClick={() => setIsMobileOpen(false)} className="md:hidden text-gray-500 hover:text-gray-700">
-              <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+            <button
+              onClick={() => setIsMobileOpen(false)}
+              className="md:hidden text-gray-500 hover:text-gray-700"
+            >
+              <svg
+                className="h-5 w-5"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M6 18L18 6M6 6l12 12"
+                />
               </svg>
             </button>
           </div>
 
           <div className="mb-6 p-3 bg-gray-50 rounded-lg">
             <div className="text-sm text-gray-600">
-              Mostrando <span className="font-semibold">{productosCount}</span> productos
+              Mostrando{' '}
+              <span className="font-semibold">{filteredCount}</span> de{' '}
+              <span className="font-semibold">{productosCount}</span> productos
             </div>
           </div>
 
@@ -112,25 +187,36 @@ function SidebarFiltersContent({ empresas, categorias, productos, productosCount
                   type="radio"
                   name="empresa"
                   checked={!empresaId}
-                  onChange={() => setEmpresaId('')}
+                  onChange={() => handleEmpresaChange('')}
                   className="h-4 w-4 text-gray-900"
                 />
-                <span className="text-sm text-gray-700">Todas las empresas</span>
-                <span className="ml-auto text-xs text-gray-500">{productosCount}</span>
+                <span className="text-sm text-gray-700">
+                  Todas las empresas
+                </span>
+                <span className="ml-auto text-xs text-gray-500">
+                  {productosCount}
+                </span>
               </label>
 
-              {empresas.map(empresa => (
-                <label key={empresa.id} className="flex items-center gap-2 p-2 rounded hover:bg-gray-50 cursor-pointer">
+              {empresas.map((empresa) => (
+                <label
+                  key={empresa.id}
+                  className="flex items-center gap-2 p-2 rounded hover:bg-gray-50 cursor-pointer"
+                >
                   <input
                     type="radio"
                     name="empresa"
                     value={empresa.id}
                     checked={empresaId === empresa.id}
-                    onChange={(e) => setEmpresaId(e.target.value)}
+                    onChange={(e) => handleEmpresaChange(e.target.value)}
                     className="h-4 w-4 text-gray-900"
                   />
-                  <span className="text-sm text-gray-700">{empresa.nombre}</span>
-                  <span className="ml-auto text-xs text-gray-500">{getEmpresaCount(empresa.id)}</span>
+                  <span className="text-sm text-gray-700">
+                    {empresa.nombre}
+                  </span>
+                  <span className="ml-auto text-xs text-gray-500">
+                    {getEmpresaCount(empresa.id)}
+                  </span>
                 </label>
               ))}
             </div>
@@ -138,32 +224,45 @@ function SidebarFiltersContent({ empresas, categorias, productos, productosCount
 
           {/* Categorías */}
           <div className="mb-8">
-            <h3 className="text-sm font-medium text-gray-900 mb-3">Categoría</h3>
+            <h3 className="text-sm font-medium text-gray-900 mb-3">
+              Categoría
+            </h3>
             <div className="space-y-2">
               <label className="flex items-center gap-2 p-2 rounded hover:bg-gray-50 cursor-pointer">
                 <input
                   type="radio"
                   name="categoria"
                   checked={!categoriaId}
-                  onChange={() => setCategoriaId('')}
+                  onChange={() => handleCategoriaChange('')}
                   className="h-4 w-4 text-gray-900"
                 />
-                <span className="text-sm text-gray-700">Todas las categorías</span>
-                <span className="ml-auto text-xs text-gray-500">{productosCount}</span>
+                <span className="text-sm text-gray-700">
+                  Todas las categorías
+                </span>
+                <span className="ml-auto text-xs text-gray-500">
+                  {productosCount}
+                </span>
               </label>
 
-              {categorias.map(categoria => (
-                <label key={categoria.id} className="flex items-center gap-2 p-2 rounded hover:bg-gray-50 cursor-pointer">
+              {categorias.map((categoria) => (
+                <label
+                  key={categoria.id}
+                  className="flex items-center gap-2 p-2 rounded hover:bg-gray-50 cursor-pointer"
+                >
                   <input
                     type="radio"
                     name="categoria"
                     value={categoria.id}
                     checked={categoriaId === categoria.id}
-                    onChange={(e) => setCategoriaId(e.target.value)}
+                    onChange={(e) => handleCategoriaChange(e.target.value)}
                     className="h-4 w-4 text-gray-900"
                   />
-                  <span className="text-sm text-gray-700">{categoria.nombre}</span>
-                  <span className="ml-auto text-xs text-gray-500">{getCategoriaCount(categoria.id)}</span>
+                  <span className="text-sm text-gray-700">
+                    {categoria.nombre}
+                  </span>
+                  <span className="ml-auto text-xs text-gray-500">
+                    {getCategoriaCount(categoria.id)}
+                  </span>
                 </label>
               ))}
             </div>
@@ -173,7 +272,8 @@ function SidebarFiltersContent({ empresas, categorias, productos, productosCount
           <div className="space-y-3">
             <button
               onClick={applyFilters}
-              className="w-full py-2.5 px-4 bg-gray-900 text-white text-sm font-medium rounded-lg hover:bg-gray-800 transition-colors"
+              disabled={!hasChanged}
+              className="w-full py-2.5 px-4 bg-gray-900 text-white text-sm font-medium rounded-lg hover:bg-gray-800 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
             >
               Aplicar filtros
             </button>
