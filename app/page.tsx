@@ -27,14 +27,15 @@ export default async function Home({ searchParams }: PageProps) {
   const empresas = await getEmpresasActivas();
   const categorias = await getCategoriasActivas();
   
-  // Obtener productos con filtros
+  // ✅ Obtener TODOS los productos (sin filtros) para los contadores
+  const todosProductos = await getProductosFiltrados();
+  
+  // ✅ Obtener productos FILTRADOS para mostrar en la página
   const productos = await getProductosFiltrados({
     empresaId,
     categoriaId
   });
   
-  // Contar productos totales (sin filtros)
-  const todosProductos = await getProductosFiltrados();
   const totalProductos = todosProductos.length;
 
   // Agrupar productos por empresa (solo si no hay filtro de empresa)
@@ -85,7 +86,7 @@ export default async function Home({ searchParams }: PageProps) {
             <SidebarFilters 
               empresas={empresasConCount}
               categorias={categoriasConCount}
-              productos={productos}
+              productos={todosProductos}
               productosCount={totalProductos}
             />
           </div>
@@ -158,4 +159,3 @@ export default async function Home({ searchParams }: PageProps) {
     </div>
   );
 }
-// LuiPV2409.*
